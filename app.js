@@ -6,9 +6,7 @@ function Book(title, author, isbn) {
 }
 
 // UI Constructor
-function UI() {
-
-}
+function UI() {}
 
 // add book to list method
 UI.prototype.addBookToList = function (book) {
@@ -33,9 +31,88 @@ UI.prototype.clearFields = function () {
   document.querySelector("#title").value = "";
   document.querySelector("#author").value = "";
   document.querySelector("#isbn").value = "";
+};
+
+// show alerts method
+UI.prototype.showAlert = function (msg, className) {
+  // create div element
+  const div = document.createElement("div");
+  
+  // add classes
+  div.className = `alert ${className}`;
+
+  // add text
+  div.appendChild(document.createTextNode(msg));
+
+  const container = document.querySelector(".container");
+
+  // get form
+  const form = document.querySelector("#book-form");
+
+  // insert alert
+  container.insertBefore(div, form);
+
+  // Timeout after 3 sec
+  setTimeout(function () {
+    document.querySelector(".alert").remove();
+  }, 3000);
+};
+
+UI.prototype.deleteBook = function (target) {
+  target.parentElement.parentElement.remove();
+};
+
+// Store
+function Store() {}
+
+Store.getBooks = function () {
+  let books;
+
+  if (localStorage.getItem("books") === null) {
+    books = [];
+  } else {
+    books = JSON.parse(localStorage.getItem("books"));
+  }
+
+  return books;
+};
+
+Store.displayBooks = function () {
+  const books = Store.getBooks();
+
+  // instanciate UI
+  const ui = new UI();
+
+  books.forEach((book) => {
+    ui.addBookToList(book);
+  });
 }
 
-// Event Listeners
+Store.addBook = function (book) {
+  const books = Store.getBooks();
+
+  books.push(book);
+
+  localStorage.setItem("books", JSON.stringify(books));
+}
+
+Store.removeBook = function (isbn) {
+  const books = Store.getBooks();
+
+  books.forEach((book, index) => {
+    if (book.isbn === isbn) {
+      books.splice(index, 1);
+    }
+  });
+
+  localStorage.setItem("books", JSON.stringify(books));
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  Store.displayBooks();
+});
+
+// event Listener for add book
 document.querySelector("#book-form").addEventListener("submit", function (e) {
   e.preventDefault();
 
@@ -50,10 +127,34 @@ document.querySelector("#book-form").addEventListener("submit", function (e) {
   // instanciate UI
   const ui = new UI();
 
-  console.log(ui);
+  // Validate
+  if (title === "" || author === "" || isbn === "") {
+    // Error alert
+    ui.showAlert("Please fill in all fields", "error");
+  } else {
+    // Add book to list
+    Store.addBook(book);
 
-  // Add book to list
-  ui.addBookToList(book);
+    ui.addBookToList(book);
 
-  ui.clearFields();
+    ui.clearFields();
+
+    ui.showAlert("Book Added!", "success");
+  }
+});
+
+// event listener for delete book
+document.querySelector("#book-list").addEventListener("click", function (e) {
+  e.preventDefault();
+
+  
+  if (e.target.className === "delete") {
+    const ui = new UI();
+    
+    Store.removeBook(e.target.parentElement.previousElementSibling.textContent);
+
+    ui.deleteBook(e.target);
+
+    ui.showAlert("Book Removed!", "success");
+  }
 });
